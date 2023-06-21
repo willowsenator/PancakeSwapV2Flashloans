@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (utils/Address.sol)
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.18;
 
 /**
  * @dev Collection of functions related to the address type
@@ -67,7 +67,10 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
         return functionCallWithValue(target, data, 0, defaultRevert);
     }
 
@@ -100,7 +103,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
         return functionCallWithValue(target, data, value, defaultRevert);
     }
 
@@ -123,8 +130,16 @@ library Address {
         if (address(this).balance < value) {
             revert AddressInsufficientBalance(address(this));
         }
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
-        return verifyCallResultFromTarget(target, success, returndata, customRevert);
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                customRevert
+            );
     }
 
     /**
@@ -133,7 +148,10 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
         return functionStaticCall(target, data, defaultRevert);
     }
 
@@ -149,7 +167,13 @@ library Address {
         function() internal view customRevert
     ) internal view returns (bytes memory) {
         (bool success, bytes memory returndata) = target.staticcall(data);
-        return verifyCallResultFromTarget(target, success, returndata, customRevert);
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                customRevert
+            );
     }
 
     /**
@@ -158,7 +182,10 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
         return functionDelegateCall(target, data, defaultRevert);
     }
 
@@ -174,7 +201,13 @@ library Address {
         function() internal view customRevert
     ) internal returns (bytes memory) {
         (bool success, bytes memory returndata) = target.delegatecall(data);
-        return verifyCallResultFromTarget(target, success, returndata, customRevert);
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                customRevert
+            );
     }
 
     /**
@@ -209,7 +242,10 @@ library Address {
      *
      * _Available since v5.0._
      */
-    function verifyCallResult(bool success, bytes memory returndata) internal view returns (bytes memory) {
+    function verifyCallResult(
+        bool success,
+        bytes memory returndata
+    ) internal view returns (bytes memory) {
         return verifyCallResult(success, returndata, defaultRevert);
     }
 
@@ -242,7 +278,10 @@ library Address {
         revert FailedInnerCall();
     }
 
-    function _revert(bytes memory returndata, function() internal view customRevert) private view {
+    function _revert(
+        bytes memory returndata,
+        function() internal view customRevert
+    ) private view {
         // Look for revert reason and bubble it up if present
         if (returndata.length > 0) {
             // The easiest way to bubble the revert reason is using memory via assembly
