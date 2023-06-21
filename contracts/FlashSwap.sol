@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.18;
 
 import "hardhat/console.sol";
 
@@ -46,8 +46,8 @@ contract PancakeswapFlashSwap {
 
     // GET CONTRACT BALANCE
     // Allow to getBalance of a token
-    function getBalanceOfToken(address _address) public view returns (uint256) {
-        return IERC20(_address).balanceOf(address(this));
+    function getBalanceOfToken(address _token) public view returns (uint256) {
+        return IERC20(_token).balanceOf(address(this));
     }
 
     // INITIATE ARBITRAGE
@@ -85,5 +85,36 @@ contract PancakeswapFlashSwap {
         uint256 _amount0,
         uint256 _amount1,
         bytes calldata _data
-    ) external {}
+    ) external {
+        // Ensure this request came from the contract
+        address token0 = IUniswapV2Pair(msg.sender).token0();
+        address token1 = IUniswapV2Pair(msg.sender).token1();
+
+        address pair = IUniswapV2Factory(PANCAKE_FACTORY).getPair(
+            token0,
+            token1
+        );
+        require(pair == msg.sender, "The sender needs to match the pair");
+        require(
+            _sender == address(this),
+            "The sender should match this contract"
+        );
+
+        // Decode data to calculate the repayment
+        (address tokenBorrow, uint256 amount) = abi.decode(
+            _data,
+            (address, uint256)
+        );
+
+        // Calculate the amount to repay
+        uint256 fee = ((amount * 3) / 997) + 1;
+        uint256 amountToRepay = amount + fee;
+
+        // DO ARBITRAGE
+
+        // PAY YOURSELF
+
+        // Pay loan back
+        IERC20(tokenBorrow).transfer(pair, amountToRepay);
+    }
 }
