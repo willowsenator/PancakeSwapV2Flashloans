@@ -93,6 +93,14 @@ describe("FlashSwap contract", () => {
       );
 
       console.log("Balance of DOT: ", formattedDOTBalance);
+
+      const contractCAKEBalance = await FLASHSWAP.getBalanceOfToken(CAKE);
+      const formattedCAKEBalance = ethers.formatUnits(
+        contractCAKEBalance,
+        DECIMALS
+      );
+
+      console.log("Balance of CAKE: ", formattedCAKEBalance);
     });
   });
 });

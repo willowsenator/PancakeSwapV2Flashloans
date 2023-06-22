@@ -70,8 +70,6 @@ contract PancakeswapFlashSwap {
         uint256 amountRequired = IUniswapV2Router01(PANCAKE_ROUTER)
             .getAmountsOut(_amountIn, path)[1];
 
-        console.log("AmountRequired: ", amountRequired);
-
         // Perform Arbitrage - Swap to another token
         uint amountReceived = IUniswapV2Router01(PANCAKE_ROUTER)
             .swapExactTokensForTokens(
@@ -81,8 +79,6 @@ contract PancakeswapFlashSwap {
                 address(this),
                 deadline
             )[1];
-
-        console.log("AmountReceived: ", amountReceived);
 
         require(amountReceived > 0, "Aborted Tx: Trade returned zero");
         return amountReceived;
@@ -119,7 +115,7 @@ contract PancakeswapFlashSwap {
         uint256 amount1Out = _tokenBorrow == token1 ? _amount : 0;
 
         // Passing data as bytes so that the 'swap' function knwows it is a flashloan
-        bytes memory data = abi.encode(_tokenBorrow, _amount);
+        bytes memory data = abi.encode(_tokenBorrow, _amount, msg.sender);
 
         // Execute the initial swap to get the loan
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
@@ -146,9 +142,9 @@ contract PancakeswapFlashSwap {
         );
 
         // Decode data to calculate the repayment
-        (address tokenBorrow, uint256 amount) = abi.decode(
+        (address tokenBorrow, uint256 amount, address myAddress) = abi.decode(
             _data,
-            (address, uint256)
+            (address, uint256, address)
         );
 
         // Calculate the amount to repay
@@ -165,11 +161,14 @@ contract PancakeswapFlashSwap {
         uint256 trade3AcquiredCoin = placeTrade(CAKE, BUSD, trade2AcquiredCoin);
 
         // Check profitable FlashLoan
-        /*bool profCheck = checkProfitableFlashSwap(
+        bool profCheck = checkProfitableFlashSwap(
             amountToRepay,
             trade3AcquiredCoin
         );
-        require(profCheck, "Arbitrage not profitable");*/
+        require(profCheck, "Arbitrage not profitable");
+
+        // Pay myself
+        IERC20(BUSD).transfer(myAddress, trade3AcquiredCoin - amountToRepay);
 
         // Pay loan back
         IERC20(tokenBorrow).transfer(pair, amountToRepay);
