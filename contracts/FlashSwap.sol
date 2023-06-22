@@ -50,6 +50,51 @@ contract PancakeswapFlashSwap {
         return IERC20(_token).balanceOf(address(this));
     }
 
+    // PLACE TRADE
+    function placeTrade(
+        address _fromToken,
+        address _toToken,
+        uint256 _amountIn
+    ) private returns (uint256) {
+        address pair = IUniswapV2Factory(PANCAKE_FACTORY).getPair(
+            _fromToken,
+            _toToken
+        );
+        require(pair != address(0), "Pool doesn't exist");
+
+        // Calculate AmountOut
+        address[] memory path = new address[](2);
+        path[0] = _fromToken;
+        path[1] = _toToken;
+
+        uint256 amountRequired = IUniswapV2Router01(PANCAKE_ROUTER)
+            .getAmountsOut(_amountIn, path)[1];
+
+        console.log("AmountRequired: ", amountRequired);
+
+        // Perform Arbitrage - Swap to another token
+        uint amountReceived = IUniswapV2Router01(PANCAKE_ROUTER)
+            .swapExactTokensForTokens(
+                _amountIn,
+                amountRequired,
+                path,
+                address(this),
+                deadline
+            )[1];
+
+        console.log("AmountReceived: ", amountReceived);
+
+        require(amountReceived > 0, "Aborted Tx: Trade returned zero");
+        return amountReceived;
+    }
+
+    function checkProfitableFlashSwap(
+        uint256 _input,
+        uint256 _output
+    ) private pure returns (bool) {
+        return _output > _input;
+    }
+
     // INITIATE ARBITRAGE
     function startArbitrage(address _tokenBorrow, uint256 _amount) external {
         IERC20(WBNB).forceApprove(PANCAKE_ROUTER, MAX_INT);
@@ -111,8 +156,20 @@ contract PancakeswapFlashSwap {
         uint256 amountToRepay = amount + fee;
 
         // DO ARBITRAGE
+        // Calculate loanAmount
+        uint256 loanAmount = _amount0 > 0 ? _amount0 : _amount1;
 
-        // PAY YOURSELF
+        // Place trades
+        uint256 trade1AcquiredCoin = placeTrade(BUSD, DOT, loanAmount);
+        uint256 trade2AcquiredCoin = placeTrade(DOT, CAKE, trade1AcquiredCoin);
+        uint256 trade3AcquiredCoin = placeTrade(CAKE, BUSD, trade2AcquiredCoin);
+
+        // Check profitable FlashLoan
+        /*bool profCheck = checkProfitableFlashSwap(
+            amountToRepay,
+            trade3AcquiredCoin
+        );
+        require(profCheck, "Arbitrage not profitable");*/
 
         // Pay loan back
         IERC20(tokenBorrow).transfer(pair, amountToRepay);
