@@ -1,7 +1,7 @@
-const { expect } = require("chai");
+const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-const { fundErc20, impersonateFundErc20 } = require("../utils/utilities");
+const { impersonateFundErc20 } = require("../utils/utilities");
 
 const {
   abi,
@@ -33,34 +33,23 @@ describe("FlashSwap contract", () => {
     [owner] = await ethers.getSigners();
 
     const whale_balance = await provider.getBalance(BUSD_WHALE);
-    console.log("WHALE_BALANCE:", ethers.formatUnits(whale_balance, 18));
     expect(whale_balance).not.eq("0");
 
     // Deploy smart Contract
     FLASHSWAP = await ethers.deployContract("PancakeswapFlashSwap");
     await FLASHSWAP.waitForDeployment();
 
-    console.log("Deployed contract address:", FLASHSWAP.target);
-
     // Configure borrowing
     const borrowInHuman = "1";
     BORROW_AMOUNT = ethers.parseUnits(borrowInHuman, DECIMALS);
-    console.log("BORROW_AMOUNT: ", BORROW_AMOUNT);
 
     // Configure Funding -- FOR TESTING
     initialFundingHuman = "100";
     FUND_AMOUNT = ethers.parseUnits(initialFundingHuman, DECIMALS);
-    console.log("FUND_AMOUNT: ", FUND_AMOUNT);
 
     // Fund our contract -- FOR TESTING
-    /*impersonateFundErc20(
-      tokenBase,
-      BUSD_WHALE,
-      FLASHSWAP.target,
-      initialFundingHuman
-    );*/
 
-    await fundErc20(
+    await impersonateFundErc20(
       tokenBase,
       BUSD_WHALE,
       FLASHSWAP.target,
@@ -73,8 +62,37 @@ describe("FlashSwap contract", () => {
       const flashswapBalance = await FLASHSWAP.getBalanceOfToken(
         BASE_TOKEN_ADDRESS
       );
+      const flashswapBalanceInHuman = ethers.formatUnits(
+        flashswapBalance,
+        DECIMALS
+      );
 
-      console.log("flashswapBalanceHuman: ", flashswapBalance);
+      expect(Number(flashswapBalanceInHuman)).eq(Number(initialFundingHuman));
+    });
+
+    it("Start arbitrage", async () => {
+      txtArbitrage = await FLASHSWAP.startArbitrage(
+        BASE_TOKEN_ADDRESS,
+        BORROW_AMOUNT
+      );
+      assert(txtArbitrage);
+
+      // Print balances
+      const contractBUSDBalance = await FLASHSWAP.getBalanceOfToken(BUSD);
+      const formattedBUSDBalance = ethers.formatUnits(
+        contractBUSDBalance,
+        DECIMALS
+      );
+
+      console.log("Balance of BUSD: ", formattedBUSDBalance);
+
+      const contractDOTBalance = await FLASHSWAP.getBalanceOfToken(DOT);
+      const formattedDOTBalance = ethers.formatUnits(
+        contractDOTBalance,
+        DECIMALS
+      );
+
+      console.log("Balance of DOT: ", formattedDOTBalance);
     });
   });
 });
